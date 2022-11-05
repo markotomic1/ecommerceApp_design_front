@@ -5,6 +5,13 @@ import Navbar from "../components/Navbar";
 import RemoveIcon from "@mui/icons-material/Remove";
 import AddIcon from "@mui/icons-material/Add";
 import { mobile } from "../responsive";
+import { useSelector } from "react-redux";
+import StripeCheckout from "react-stripe-checkout";
+import { useEffect, useState } from "react";
+import { userRequest } from "../requestMethod";
+import { useNavigate } from "react-router-dom";
+
+const KEY = process.env.REACT_APP_STRIPE;
 
 const Container = styled.div``;
 const Wrapper = styled.div`
@@ -57,6 +64,7 @@ const ProductDetail = styled.div`
 `;
 
 const Image = styled.img`
+  margin-bottom: 10px;
   width: 200px;
   height: 170px;
   object-fit: cover;
@@ -144,6 +152,27 @@ const Button = styled.button`
 `;
 
 const Cart = () => {
+  const cart = useSelector((state) => state.cart);
+  const [stripeToken, setStripeToken] = useState(null);
+  let count = 0;
+  const navigate = useNavigate();
+  const onToken = (token) => {
+    setStripeToken(token);
+  };
+  useEffect(() => {
+    const makeRequest = async () => {
+      try {
+        const res = await userRequest.post("/checkout/payment", {
+          tokenId: stripeToken.id,
+          amount: cart.total * 100,
+        });
+        navigate("/success", {
+          state: { stripeData: res.data, products: cart },
+        });
+      } catch (error) {}
+    };
+    stripeToken && makeRequest();
+  }, [stripeToken, cart.total, navigate]);
   return (
     <Container>
       <Navbar />
@@ -160,63 +189,45 @@ const Cart = () => {
         </Top>
         <Bottom>
           <Info>
-            <Product>
-              <ProductDetail>
-                <Image src='https://cdn.shopify.com/s/files/1/0070/7032/files/image5_4578a9e6-2eff-4a5a-8d8c-9292252ec848.jpg?v=1620247043' />
-                <Details>
-                  <ProductName>
-                    <b>Product: </b>Proizvod
-                  </ProductName>
-                  <ProductId>
-                    <b>ID: </b>234433443
-                  </ProductId>
-                  <ProductColor color='black' />
-                  <ProductSize>
-                    <b>Size:</b>44.6
-                  </ProductSize>
-                </Details>
-              </ProductDetail>
-              <PriceDetail>
-                <ProductAmountContainer>
-                  <AddIcon />
-                  <ProductAmount>2</ProductAmount>
-                  <RemoveIcon />
-                </ProductAmountContainer>
-                <ProductPrice>30$</ProductPrice>
-              </PriceDetail>
-            </Product>
+            {cart.products.map((product) => (
+              <Product key={count++}>
+                <ProductDetail>
+                  <Image src={product.img} />
+                  <Details>
+                    <ProductName>
+                      <b>Product: </b>
+                      {product.title}
+                    </ProductName>
+                    <ProductId>
+                      <b>ID: </b>
+                      {product._id}
+                    </ProductId>
+                    <ProductColor color={product.color} />
+                    <ProductSize>
+                      <b>Size:</b>
+                      {product.size}
+                    </ProductSize>
+                  </Details>
+                </ProductDetail>
+                <PriceDetail>
+                  <ProductAmountContainer>
+                    <AddIcon />
+                    <ProductAmount>{product.quantity}</ProductAmount>
+                    <RemoveIcon />
+                  </ProductAmountContainer>
+                  <ProductPrice>
+                    {product.price * product.quantity}$
+                  </ProductPrice>
+                </PriceDetail>
+              </Product>
+            ))}
             <Hr />
-            <Product>
-              <ProductDetail>
-                <Image src='https://cdn.shopify.com/s/files/1/0070/7032/files/image5_4578a9e6-2eff-4a5a-8d8c-9292252ec848.jpg?v=1620247043' />
-                <Details>
-                  <ProductName>
-                    <b>Product: </b>Proizvod
-                  </ProductName>
-                  <ProductId>
-                    <b>ID: </b>234433443
-                  </ProductId>
-                  <ProductColor color='black' />
-                  <ProductSize>
-                    <b>Size:</b>44.6
-                  </ProductSize>
-                </Details>
-              </ProductDetail>
-              <PriceDetail>
-                <ProductAmountContainer>
-                  <AddIcon />
-                  <ProductAmount>2</ProductAmount>
-                  <RemoveIcon />
-                </ProductAmountContainer>
-                <ProductPrice>30$</ProductPrice>
-              </PriceDetail>
-            </Product>
           </Info>
           <Summary>
             <SummaryTitle>Order sumamry</SummaryTitle>
             <SummaryItem>
               <SummaryItemText>Subtotal</SummaryItemText>
-              <SummaryItemPrice>80$</SummaryItemPrice>
+              <SummaryItemPrice>{cart.total}$</SummaryItemPrice>
             </SummaryItem>
             <SummaryItem>
               <SummaryItemText>Estimated shiping</SummaryItemText>
@@ -228,9 +239,20 @@ const Cart = () => {
             </SummaryItem>
             <SummaryItem type='total'>
               <SummaryItemText>Total</SummaryItemText>
-              <SummaryItemPrice>80$</SummaryItemPrice>
+              <SummaryItemPrice>{cart.total}$</SummaryItemPrice>
             </SummaryItem>
-            <Button>Checkout now</Button>
+            <StripeCheckout
+              name='Shop'
+              image='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQkqg0ZpdaXIaCnB0PJuIbpPjuO-F7i4J7TfQ&usqp=CAU'
+              billingAddress
+              shippingAddress
+              description={`Your total is $${cart.total}`}
+              amount={cart.total * 100}
+              token={onToken}
+              stripeKey={KEY}
+            >
+              <Button>Checkout Now</Button>
+            </StripeCheckout>
           </Summary>
         </Bottom>
       </Wrapper>

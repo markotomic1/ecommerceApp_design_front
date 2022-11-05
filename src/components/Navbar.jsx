@@ -4,14 +4,16 @@ import SearchIcon from "@mui/icons-material/Search";
 import { Badge } from "@mui/material";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import { mobile } from "../responsive";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
 
 const Container = styled.div`
   height: 60px;
-  width: 100vw;
+  width: 100%;
   ${mobile({ height: "50px" })}
 `;
 const Wrapper = styled.div`
-  padding: 10px 20px;
+  padding: 10px 10px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -52,10 +54,10 @@ const Right = styled.div`
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  ${mobile({ flex: 2, justifyContent: "center" })}
+  ${mobile({ flex: 2, justifyContent: "center" })};
 `;
 const Menutem = styled.div`
-  font-size: 14px;
+  font-size: 20px;
   font-weight: 800;
   cursor: pointer;
   margin-left: 20px;
@@ -63,6 +65,8 @@ const Menutem = styled.div`
 `;
 
 const Navbar = () => {
+  const quantity = useSelector((state) => state.cart).quantity;
+
   return (
     <Container>
       <Wrapper>
@@ -79,11 +83,13 @@ const Navbar = () => {
         <Right>
           <Menutem>Register</Menutem>
           <Menutem>Sign in</Menutem>
-          <Menutem>
-            <Badge badgeContent={4} color='primary'>
-              <ShoppingCartIcon color='action' />
-            </Badge>
-          </Menutem>
+          <Link to='/cart'>
+            <Menutem style={{ marginRight: "30px" }}>
+              <Badge badgeContent={quantity} color='primary'>
+                <ShoppingCartIcon color='action' />
+              </Badge>
+            </Menutem>
+          </Link>
         </Right>
       </Wrapper>
     </Container>
